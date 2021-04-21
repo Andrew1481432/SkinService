@@ -136,7 +136,7 @@ public class SkinApplication extends Application {
             });
             group.GET("/skin/{username: [a-zA-z0-9_ ]+}\\.png", context -> {
                 String username = context.getParameter("username").toString();
-                writeImage(context, service.skinRepository.getSkin(username, false));
+                writeImage(context, service.skinRepository.getSkin(username, true));
             });
         });
         
