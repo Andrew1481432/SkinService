@@ -2,6 +2,7 @@ package net.xtrafrancyz.skinservice.repository;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.oracle.tools.packager.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,9 +11,31 @@ import net.xtrafrancyz.skinservice.SkinService;
 import net.xtrafrancyz.skinservice.processor.Image;
 
 import javax.imageio.ImageIO;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.Point;
+import java.awt.Transparency;
+import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.ComponentColorModel;
+import java.awt.image.DataBuffer;
+import java.awt.image.DataBufferByte;
+import java.awt.image.Raster;
+import java.awt.image.WritableRaster;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
+import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -55,7 +78,6 @@ public class SkinRepository {
         ImageIO.setUseCache(false);
     }
     
-    @SuppressWarnings("ConstantConditions")
     public Image getSkin(String username, boolean orDefault) {
         ImageContainer img = skins.get(username);
         if (img.img == null && orDefault)
@@ -79,6 +101,51 @@ public class SkinRepository {
         skins.invalidate(username);
     }
     
+    public static BufferedImage scale(BufferedImage src, int w, int h) {
+        BufferedImage img =
+            new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
+        int x, y;
+        int ww = src.getWidth();
+        int hh = src.getHeight();
+        int[] ys = new int[h];
+        for (y = 0; y < h; y++)
+            ys[y] = y * hh / h;
+        for (x = 0; x < w; x++) {
+            int newX = x * ww / w;
+            for (y = 0; y < h; y++) {
+                int col = src.getRGB(newX, ys[y]);
+                img.setRGB(x, y, col);
+            }
+        }
+        return img;
+    }
+    
+    public static BufferedImage fileToImage(String sourceFile) throws IOException {
+        try {
+            FileInputStream fis = new FileInputStream(sourceFile);
+            //LOG.debug("fis lenght: " + fis.getChannel().size());
+            DataInputStream dis = new DataInputStream(fis);
+            int size = 64;
+            BufferedImage image = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+            for (int y = 0; y < size; y++) {
+                for (int x = 0; x < size; x++) {
+                    int red = dis.read();
+                    int green = dis.read();
+                    int blue = dis.read();
+                    int alpha = dis.read();
+                    //int argb = alpha << 24 + red << 16 + green << 8 + blue;
+                    //int rgb = ((alpha & 0xFF) << 24) | ((red & 0xFF) << 16) | ((green & 0xFF) << 8) | (blue & 0xFF);
+                    image.setRGB(x, y, new Color(red, green, blue, alpha).getRGB()); // ??? FIXME аллокация нового обькта на каждый пиксель
+                }
+            }
+        
+            dis.close();
+            return image;
+        } catch (FileNotFoundException exception) {
+            return null;
+        }
+    }
+    
     private Image fetch(String path) {
         BufferedImage img = null;
         try {
@@ -88,12 +155,23 @@ public class SkinRepository {
             } else if (access == Access.FILE) {
                 LOG.debug("Read image from file: {}", path);
                 img = ImageIO.read(new File(path));
+                if(img == null) {
+                    img = fileToImage(path);
+                    if(img != null) {
+                        LOG.debug("Image have rgba byte buffer");
+                    }
+                } else {
+                    LOG.debug("Image have extension png");
+                }
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+            //LOG.error("Error read: ", ignored);
+        }
         
-        if (img == null)
+        if (img == null) {
+            LOG.error("image null");
             return null;
-        else
+        } else
             return new Image(img);
     }
     

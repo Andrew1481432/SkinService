@@ -16,7 +16,9 @@ import java.io.IOException;
  */
 public class Image {
     private static final Logger LOG = LoggerFactory.getLogger(SkinService.class);
+    
     private static final int DEFAULT_IMAGE_TYPE = BufferedImage.TYPE_INT_ARGB;
+    
     private static final ThreadLocal<PngEncoder> PNG_ENCODER = ThreadLocal.withInitial(() ->
         new PngEncoder(PngEncoder.COLOR_TRUECOLOR_ALPHA, PngEncoder.BEST_SPEED)
     );
