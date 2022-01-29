@@ -2,7 +2,7 @@ package net.xtrafrancyz.skinservice.repository;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
-import com.oracle.tools.packager.Log;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,30 +12,14 @@ import net.xtrafrancyz.skinservice.processor.Image;
 
 import javax.imageio.ImageIO;
 import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.Point;
-import java.awt.Transparency;
-import java.awt.color.ColorSpace;
+
 import java.awt.image.BufferedImage;
-import java.awt.image.ColorModel;
-import java.awt.image.ComponentColorModel;
-import java.awt.image.DataBuffer;
-import java.awt.image.DataBufferByte;
-import java.awt.image.Raster;
-import java.awt.image.WritableRaster;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
-import java.nio.ByteBuffer;
-import java.nio.file.Files;
-import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
 /**

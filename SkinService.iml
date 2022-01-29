@@ -17,8 +17,6 @@
     <orderEntry type="library" name="Maven: com.google.errorprone:error_prone_annotations:2.4.0" level="project" />
     <orderEntry type="library" name="Maven: ro.pippo:pippo-core:1.13.1" level="project" />
     <orderEntry type="library" name="Maven: org.slf4j:slf4j-api:1.7.7" level="project" />
-    <orderEntry type="library" name="Maven: javax.xml.bind:jaxb-api:2.3.1" level="project" />
-    <orderEntry type="library" name="Maven: javax.activation:javax.activation-api:1.2.0" level="project" />
     <orderEntry type="library" name="Maven: ro.pippo:pippo-undertow:1.13.1" level="project" />
     <orderEntry type="library" name="Maven: io.undertow:undertow-servlet:1.4.27.Final" level="project" />
     <orderEntry type="library" name="Maven: io.undertow:undertow-core:1.4.27.Final" level="project" />
