@@ -11,15 +11,16 @@ import net.xtrafrancyz.skinservice.SkinService;
 import net.xtrafrancyz.skinservice.processor.Image;
 
 import javax.imageio.ImageIO;
-import java.awt.Color;
 
 import java.awt.image.BufferedImage;
 import java.io.DataInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -32,6 +33,8 @@ public class SkinRepository {
     private LoadingCache<String, ImageContainer> capes;
     
     private Access access;
+    private Type type;
+    
     private String skinPath;
     private String capePath;
     private Image defaultSkin;
@@ -39,7 +42,8 @@ public class SkinRepository {
     public SkinRepository(SkinService service) {
         Config.RepositoryConfig config = service.config.repository;
         
-        access = Access.valueOf(config.type);
+        access = Access.valueOf(config.access);
+        type = Type.valueOf(config.type);
         skinPath = config.skinPath;
         capePath = config.capePath;
         
@@ -104,22 +108,25 @@ public class SkinRepository {
         return img;
     }
     
-    public static BufferedImage fileToImage(String sourceFile) throws IOException {
-        try {
-            FileInputStream fis = new FileInputStream(sourceFile);
-            //LOG.debug("fis lenght: " + fis.getChannel().size());
-            DataInputStream dis = new DataInputStream(fis);
+    public static BufferedImage getBuffImageFromByteRgb(InputStream inputStream) throws IOException {
+        try (DataInputStream dis = new DataInputStream(inputStream)) {
+            
             int size = 64;
+            
             BufferedImage image = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
             for (int y = 0; y < size; y++) {
                 for (int x = 0; x < size; x++) {
-                    int red = dis.read();
-                    int green = dis.read();
-                    int blue = dis.read();
-                    int alpha = dis.read();
-                    //int argb = alpha << 24 + red << 16 + green << 8 + blue;
-                    //int rgb = ((alpha & 0xFF) << 24) | ((red & 0xFF) << 16) | ((green & 0xFF) << 8) | (blue & 0xFF);
-                    image.setRGB(x, y, new Color(red, green, blue, alpha).getRGB()); // ??? FIXME аллокация нового обькта на каждый пиксель
+                    int r = dis.read();
+                    int g = dis.read();
+                    int b = dis.read();
+                    int a = dis.read();
+                    
+                    int rgb = ((a & 0xFF) << 24) |
+                        ((r & 0xFF) << 16) |
+                        ((g & 0xFF) << 8)  |
+                        ((b & 0xFF) << 0);
+                    
+                    image.setRGB(x, y, rgb);
                 }
             }
         
@@ -133,30 +140,42 @@ public class SkinRepository {
     private Image fetch(String path) {
         BufferedImage img = null;
         try {
-            if (access == Access.URL) {
-                LOG.debug("Read image from url: {}", path);
-                img = ImageIO.read(new URL(path));
-            } else if (access == Access.FILE) {
+            if (access == Access.FILE) {
                 LOG.debug("Read image from file: {}", path);
-                img = ImageIO.read(new File(path));
-                if(img == null) {
-                    img = fileToImage(path);
-                    if(img != null) {
-                        LOG.debug("Image have rgba byte buffer");
+                if (type == Type.BYTE) {
+                    img = getBuffImageFromByteRgb(Files.newInputStream(Paths.get(path)));
+                } else if (type == Type.COMMON) {
+                    img = ImageIO.read(new File(path));
+                }
+            } else if (access == Access.URL) {
+                LOG.debug("Read image from url: {}", path);
+                URL url = new URL(path);
+                if (type == Type.BYTE) {
+                    InputStream istream;
+                    try {
+                        istream = url.openStream();
+                    } catch (IOException e) {
+                        LOG.error("Can't get input stream from URL: {}", path);
+                        return null;
                     }
-                } else {
-                    LOG.debug("Image have extension png");
+                    
+                    img = getBuffImageFromByteRgb(istream);
+                } else if (type == Type.COMMON) {
+                    img = ImageIO.read(url);
                 }
             }
-        } catch (Exception ignored) {
-            //LOG.error("Error read: ", ignored);
-        }
+        } catch (Exception ignored) {}
         
         if (img == null) {
-            LOG.error("image null");
+            LOG.error("Can't get image: {}", path);
             return null;
         } else
             return new Image(img);
+    }
+    
+    private enum Type {
+        BYTE,
+        COMMON // Normal image format
     }
     
     private enum Access {

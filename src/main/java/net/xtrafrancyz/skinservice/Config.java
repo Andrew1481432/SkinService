@@ -19,7 +19,8 @@ public class Config {
     public CloudflareConfig cloudflare = new CloudflareConfig();
     
     public static class RepositoryConfig {
-        public String type = "URL";
+        public String access = "URL";
+        public String type = "COMMON";
         
         @SerializedName("skin-path")
         public String skinPath = "http://s3.amazonaws.com/MinecraftSkins/{username}.png";
